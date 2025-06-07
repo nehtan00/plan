@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive E-commerce Playbook</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: TextFX Inspired (Background: linear-gradient(to bottom right, #0F172A, #1E293B) - dark slate, Text: #E2E8F0 light slate, Accent: #60A5FA blue-400, Card Background: #1A202C darker slate) -->
+    <!-- Application Structure Plan: A tabbed dashboard SPA. The structure prioritizes user task and business lifecycle stage over the original document's linear format. The main sections are: a 'Dashboard' for real-time KPI tracking, an actionable '30-Day Plan' with weekly steps, a 'Growth Levers' section for optimization strategies, a 'Tool Kit' reference library, and a new 'Glossary' for quick term lookups. This design allows users to quickly access the information most relevant to their current needs, transforming a static playbook into an interactive, decision-support tool. -->
+    <!-- Visualization & Content Choices: Dashboard uses Chart.js doughnut chart as a gauge for LTV:CAC Ratio and simple text outputs for other KPIs (Goal: Inform/Compare), allowing user input for dynamic calculation. 30-Day Plan uses a Chart.js doughnut for budget breakdown and a JS-powered tab system for weekly tasks with interactive checkboxes for tracking progress (Goal: Organize/Change/Checklist). Growth Levers use JS accordions for checklists (interactive checkboxes) and key troubleshooting points (Goal: Organize/Checklist). Tool Kit uses a grid of buttons and JS modals for detailed reference guides (Goal: Organize). Glossary uses a searchable list for quick definitions (Goal: Inform/Organize/Search). This approach avoids a long scroll and presents information in contextually relevant, interactive formats. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #0F172A, #1E293B); /* Dark slate gradient */
+            color: #E2E8F0; /* Light text */
+        }
+        .nav-link { transition: all 0.3s ease; color: #94A3B8; /* Slate-400 */ }
+        .nav-link.active { color: #60A5FA; /* Blue-400 */ border-bottom: 2px solid #60A5FA; }
+        .nav-link:not(.active):hover { color: #E2E8F0; }
+        .card { background-color: #1A202C; /* Darker slate for cards */ border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); padding: 1.5rem; border: 1px solid #2D3748; /* Dark border */ }
+        .accordion-button { transition: background-color 0.3s ease; color: #E2E8F0; /* Light text */ }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; color: #94A3B8; /* Secondary text */ }
+        .chart-container { position: relative; width: 100%; max-width: 500px; margin-left: auto; margin-right: auto; height: 280px; }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content { background: #1A202C; /* Darker slate for modals */ padding: 2rem; border-radius: 0.75rem; max-width: 90%; width: 600px; max-height: 80vh; overflow-y: auto; border: 1px solid #2D3748; color: #E2E8F0; }
+        input[type="number"], input[type="text"] {
+            background-color: #2D3748; /* Darker input background */
+            color: #E2E8F0; /* Light text */
+            border-color: #4A5568; /* Darker border */
+            padding: 0.5rem 1rem; /* Adjust padding for inputs */
+            border-radius: 0.375rem; /* Match card border-radius */
+        }
+        label { color: #E2E8F0; }
+        strong { color: #E2E8F0; }
+        /* Checklist specific styling */
+        .checklist-item { display: flex; align-items: flex-start; margin-bottom: 0.75rem; line-height: 1.5; }
+        .checklist-item input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #60A5FA; /* Blue-400 */
+            border-radius: 0.25rem;
+            margin-right: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background-color: #2D3748; /* Darker checkbox background */
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .checklist-item input[type="checkbox"]:checked {
+            background-color: #60A5FA; /* Blue-400 */
+            border-color: #60A5FA;
+        }
+        .checklist-item input[type="checkbox"]:checked::after {
+            content: '\2713'; /* Checkmark Unicode character */
+            color: white;
+            font-size: 0.75rem;
+        }
+        .checklist-item label { cursor: pointer; color: #94A3B8; } /* Secondary text color for labels */
+        .checklist-item input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            color: #4A5568; /* Faded text for checked items */
+        }
+        .glossary-term-item {
+            border-bottom: 1px dashed #4A5568; /* Subtle separator */
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .glossary-term-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .glossary-term {
+            font-weight: bold;
+            color: #60A5FA; /* Accent color for terms */
+            margin-bottom: 0.25rem;
+        }
+        .glossary-definition {
+            color: #94A3B8; /* Secondary text color for definitions */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-400">Interactive E-commerce Playbook</h1>
+            <p class="text-slate-400 mt-2">Your dynamic guide to scaling a D2C brand on Shopify.</p>
+        </header>
+
+        <nav class="flex justify-center border-b border-gray-700 mb-8">
+            <button data-target="dashboard" class="nav-link active px-4 py-3 text-sm md:text-base font-medium">KPI Dashboard</button>
+            <button data-target="plan" class="nav-link px-4 py-3 text-sm md:text-base font-medium">30-Day Plan</button>
+            <button data-target="levers" class="nav-link px-4 py-3 text-sm md:text-base font-medium">Growth Levers</button>
+            <button data-target="toolkit" class="nav-link px-4 py-3 text-sm md:text-base font-medium">Tool Kit</button>
+            <button data-target="glossary" class="nav-link px-4 py-3 text-sm md:text-base font-medium">Glossary</button>
+        </nav>
+
+        <main>
+            <!-- KPI Dashboard Section -->
+            <section id="dashboard" class="content-section">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-200">Unit Economics & KPI Dashboard</h2>
+                    <p class="text-slate-400 mt-1">Model your key financial metrics to ensure profitability from day one.</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8 items-start">
+                    <div class="card space-y-4">
+                        <h3 class="font-bold text-lg text-slate-200 text-center">KPI Calculator</h3>
+                        <div>
+                            <label for="aov" class="block text-sm font-medium text-slate-200">Average Order Value ($)</label>
+                            <input type="number" id="aov" value="100" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
+                        </div>
+                        <div>
+                            <label for="cogs" class="block text-sm font-medium text-slate-200">Cost of Goods Sold (%)</label>
+                            <input type="number" id="cogs" value="30" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
+                        </div>
+                        <div>
+                            <label for="purchase_freq" class="block text-sm font-medium text-slate-200">Purchase Frequency (per year)</label>
+                            <input type="number" id="purchase_freq" value="1.5" step="0.1" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
+                        </div>
+                        <div>
+                            <label for="cac" class="block text-sm font-medium text-slate-200">Customer Acquisition Cost ($)</label>
+                            <input type="number" id="cac" value="35" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
+                        </div>
+                    </div>
+                    <div class="space-y-8">
+                         <div class="card text-center">
+                            <h3 class="font-bold text-lg text-slate-200 mb-4">LTV:CAC Ratio</h3>
+                            <div class="chart-container h-48 md:h-56">
+                                <canvas id="ltvCacRatioChart"></canvas>
+                            </div>
+                        </div>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div class="card text-center">
+                                <h4 class="font-semibold text-slate-400">LTV</h4>
+                                <p id="ltv_output" class="text-3xl font-bold text-blue-400">$0</p>
+                            </div>
+                            <div class="card text-center">
+                                <h4 class="font-semibold text-slate-400">Contribution Margin</h4>
+                                <p id="cm_output" class="text-3xl font-bold text-blue-400">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 30-Day Plan Section -->
+            <section id="plan" class="content-section hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-200">30-Day Acquisition Plan</h2>
+                    <p class="text-slate-400 mt-1">Your week-by-week guide to launching with a $1000 budget.</p>
+                </div>
+                <div class="card mb-8">
+                    <h3 class="font-bold text-lg text-slate-200 text-center mb-4">Budget Allocation Strategy</h3>
+                     <div class="chart-container h-56 md:h-64">
+                        <canvas id="budgetChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-4xl mx-auto">
+                    <div class="mb-4 flex justify-center border-b border-gray-700">
+                        <button class="plan-tab active-tab px-6 py-2 font-medium" data-week="week1">Week 1</button>
+                        <button class="plan-tab px-6 py-2 font-medium" data-week="week2">Week 2</button>
+                        <button class="plan-tab px-6 py-2 font-medium" data-week="week3">Week 3</button>
+                        <button class="plan-tab px-6 py-2 font-medium" data-week="week4">Week 4</button>
+                    </div>
+
+                    <div id="week1" class="plan-content">
+                        <div class="card space-y-4">
+                            <h4 class="font-bold text-lg text-slate-200">Week 1: Technical Warm-up & Pixel Seasoning ($150)</h4>
+                            <div class="space-y-2">
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week1-action1">
+                                    <label for="week1-action1">Launch a 'dark' "Add to Cart" conversion campaign on Meta to season your pixel.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week1-action2">
+                                    <label for="week1-action2">Set up a low-budget ($6/day) Broad Match Keyword campaign on Google for brand/general terms.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week1-action3">
+                                    <label for="week1-action3">Triple-check that Google Ads conversion tracking, Google Analytics 4, and Microsoft Clarity are all firing correctly.</label>
+                                </div>
+                            </div>
+                            <p class="text-slate-400"><strong>Metrics:</strong> Ensure pixels are firing correctly in Meta Events Manager and Google Ads.</p>
+                             <p class="text-slate-400"><strong>Scenario:</strong> Pixel isn't firing. <strong>Remedy:</strong> Use browser extensions like Facebook Pixel Helper and Google Tag Assistant to debug. Reinstall if needed.</p>
+                        </div>
+                    </div>
+                    <div id="week2" class="plan-content hidden">
+                        <div class="card space-y-4">
+                            <h4 class="font-bold text-lg text-slate-200">Week 2: Initial Data Acquisition ($250)</h4>
+                             <div class="space-y-2">
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week2-action1">
+                                    <label for="week2-action1">Launch a low-budget "Purchase" conversion campaign on Meta targeting broad interests or lookalikes.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week2-action2">
+                                    <label for="week2-action2">Launch a Performance Max (PMax) campaign on Google ($10/day).</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week2-action3">
+                                    <label for="week2-action3">Add your brand name as a negative keyword to PMax and do not provide audience signals yet.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week2-action4">
+                                    <label for="week2-action4">Monitor Link Clicks, CPM, Cost Per ATC for Meta Ads. For PMax, monitor impressions and initial search terms.</label>
+                                </div>
+                            </div>
+                            <p class="text-slate-400"><strong>Metrics:</strong> Track Link Clicks, CPM, Cost Per ATC. For PMax, monitor impressions and search terms.</p>
+                             <p class="text-slate-400"><strong>Scenario:</strong> PMax not spending. <strong>Remedy:</strong> Check asset quality and daily budget. Ensure negative keywords aren't too restrictive.</p>
+                        </div>
+                    </div>
+                    <div id="week3" class="plan-content hidden">
+                        <div class="card space-y-4">
+                            <h4 class="font-bold text-lg text-slate-200">Week 3: First Optimization Cycle ($300)</h4>
+                            <div class="space-y-2">
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week3-action1">
+                                    <label for="week3-action1">Analyze Meta ad creative and audience performance. Pause low-performing ad sets/creatives.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week3-action2">
+                                    <label for="week3-action2">Test new creatives (different hooks, visuals, ad copy) on Meta.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week3-action3">
+                                    <label for="week3-action3">Daily review Google PMax search term report and aggressively add all irrelevant terms to a shared negative keyword list.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week3-action4">
+                                    <label for="week3-action4">Evaluate PMax Assets and replace any with a "Low" performance rating with new variations.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week3-action5">
+                                    <label for="week3-action5">Use Microsoft Clarity to watch session recordings of users who dropped off on PDPs or cart.</label>
+                                </div>
+                            </div>
+                            <p class="text-slate-400"><strong>Metrics:</strong> Goal is to improve CTR and reduce CPA.</p>
+                            <p class="text-slate-400"><strong>Scenario:</strong> Irrelevant search terms in PMax. <strong>Remedy:</strong> This is normal. Be diligent with adding negatives daily.</p>
+                        </div>
+                    </div>
+                    <div id="week4" class="plan-content hidden">
+                        <div class="card space-y-4">
+                            <h4 class="font-bold text-lg text-slate-200">Week 4: Performance Analysis & Strategic Pivot ($300)</h4>
+                            <div class="space-y-2">
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week4-action1">
+                                    <label for="week4-action1">Calculate your Week 4 ROAS for Meta prospecting campaigns.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week4-action2">
+                                    <label for="week4-action2">Scale winning Meta ad sets by 10-20% daily if performance is positive.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week4-action3">
+                                    <label for="week4-action3">Implement Meta retargeting campaigns for website visitors and Add-To-Carts.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week4-action4">
+                                    <label for="week4-action4">Calculate Week 4 ROAS for Google PMax.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week4-action5">
+                                    <label for="week4-action5">If PMax ROAS is positive (e.g., > 2.0), consider shifting bidding strategy to Target ROAS (tROAS).</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week4-action6">
+                                    <label for="week4-action6">Introduce Audience Signals (customer list, website visitors) to your PMax campaign.</label>
+                                </div>
+                            </div>
+                            <p class="text-slate-400"><strong>Metrics:</strong> ROAS, CPA.</p>
+                            <p class="text-slate-400"><strong>Scenario:</strong> ROAS is still too low. <strong>Remedy:</strong> Do not increase spend. Review all aspects: PDP, pricing, creative, audience, etc. Consider pausing and re-strategizing if LTV:CAC is consistently below 1:1.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Growth Levers Section -->
+            <section id="levers" class="content-section hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-200">Growth Levers & Optimization</h2>
+                    <p class="text-slate-400 mt-1">Strategies for scaling, conversion, and troubleshooting.</p>
+                </div>
+                <div class="w-full max-w-4xl mx-auto space-y-4">
+                    <div class="accordion-item card">
+                        <button class="accordion-button w-full flex justify-between items-center text-left font-bold text-lg">
+                            <span>PDP Conversion Checklist</span>
+                            <span class="accordion-icon text-2xl font-light">+</span>
+                        </button>
+                        <div class="accordion-content pt-4">
+                           <div class="space-y-2">
+                               <div class="checklist-item">
+                                   <input type="checkbox" id="pdp-visuals">
+                                   <label for="pdp-visuals">**Visuals:** 5-7 high-res images + 1 short video.</label>
+                               </div>
+                               <div class="checklist-item">
+                                   <input type="checkbox" id="pdp-buybox">
+                                   <label for="pdp-buybox">**Buy Box:** Clear title, price, social proof, and a high-contrast 'Add to Cart' button.</label>
+                               </div>
+                               <div class="checklist-item">
+                                   <input type="checkbox" id="pdp-trust">
+                                   <label for="pdp-trust">**Trust Signals:** Badges (Secure Checkout), clear shipping info.</label>
+                               </div>
+                               <div class="checklist-item">
+                                   <input type="checkbox" id="pdp-info-hierarchy">
+                                   <label for="pdp-info-hierarchy">**Info Hierarchy:** Short benefit-focused bullets, detailed long description, filterable reviews, UGC gallery.</label>
+                               </div>
+                               <div class="checklist-item">
+                                   <input type="checkbox" id="pdp-cross-sells">
+                                   <label for="pdp-cross-sells">**Cross-sells:** "Frequently bought together" section.</label>
+                               </div>
+                           </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item card">
+                        <button class="accordion-button w-full flex justify-between items-center text-left font-bold text-lg">
+                            <span>Google Ads Structure for Scale</span>
+                            <span class="accordion-icon text-2xl font-light">+</span>
+                        </button>
+                        <div class="accordion-content pt-4 text-slate-400">
+                           <ul class="list-disc list-inside space-y-2">
+                               <li>**Campaign 1 (PMax Prospecting):** Goal is new customer acquisition. Exclude brand terms and customer lists.</li>
+                               <li>**Campaign 2 (Standard Shopping):** Goal is to capture brand searches and retarget. Target only brand keywords.</li>
+                               <li>**Campaign 3 (Search - Non-Brand):** Goal is to capture high-intent searches for solutions your product offers.</li>
+                           </ul>
+                        </div>
+                    </div>
+                     <div class="accordion-item card">
+                        <button class="accordion-button w-full flex justify-between items-center text-left font-bold text-lg">
+                            <span>Data-Driven Troubleshooting Matrix</span>
+                            <span class="accordion-icon text-2xl font-light">+</span>
+                        </button>
+                        <div class="accordion-content pt-4 space-y-4">
+                           <div>
+                                <h5 class="font-semibold text-slate-200">Symptom: High Clicks, Conversion Rate &lt; 1%</h5>
+                                <p class="text-slate-400"><strong>Remedy:</strong> State shipping costs on PDP, ensure ad copy matches landing page H1, add more social proof.</p>
+                           </div>
+                           <div>
+                                <h5 class="font-semibold text-slate-200">Symptom: Low CTR (&lt;1% PMax, &lt;4% Search)</h5>
+                                <p class="text-slate-400"><strong>Remedy:</strong> A/B test ad copy, refresh "Low" rated assets, check if your offer is competitive.</p>
+                           </div>
+                           <div>
+                                <h5 class="font-semibold text-slate-200">Symptom: High Cart Abandonment (>70%)</h5>
+                                <p class="text-slate-400"><strong>Remedy:</strong> Display shipping costs earlier, enable guest checkout, simplify the checkout process.</p>
+                           </div>
+                           <div>
+                                <h5 class="font-semibold text-slate-200">Symptom: LTV:CAC Ratio &lt; 2:1</h5>
+                                <p class="text-slate-400"><strong>Remedy:</strong> Lower tROAS target. Aggressively add negative keywords. Implement post-purchase upsells/cross-sells. Consider subscription offering.</p>
+                           </div>
+                           <div>
+                                <h5 class="font-semibold text-slate-200">Symptom: Low Email List Growth</h5>
+                                <p class="text-slate-400"><strong>Remedy:</strong> Implement pop-ups/banners with clear value propositions. Offer a stronger incentive (e.g., 10% off first order).</p>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tool Kit Section -->
+            <section id="toolkit" class="content-section hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-200">E-commerce Tool Kit</h2>
+                    <p class="text-slate-400 mt-1">Setup and optimization guides for your essential tech stack.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <button data-modal="klaviyo" class="modal-button card text-left hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-slate-200">Klaviyo</h3>
+                        <p class="text-slate-400 mt-1">Email & SMS Marketing</p>
+                    </button>
+                    <button data-modal="yotpo" class="modal-button card text-left hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-slate-200">Yotpo / Loox</h3>
+                        <p class="text-slate-400 mt-1">Reviews & UGC</p>
+                    </button>
+                    <button data-modal="ga4" class="modal-button card text-left hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-slate-200">Google Analytics 4</h3>
+                        <p class="text-slate-400 mt-1">Core Analytics</p>
+                    </button>
+                    <button data-modal="clarity" class="modal-button card text-left hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-slate-200">Microsoft Clarity</h3>
+                        <p class="text-slate-400 mt-1">Heatmaps & Recordings</p>
+                    </button>
+                    <button data-modal="fairing" class="modal-button card text-left hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-slate-200">Fairing / Kno</h3>
+                        <p class="text-slate-400 mt-1">Post-Purchase Surveys</p>
+                    </button>
+                    <button data-modal="recharge" class="modal-button card text-left hover:shadow-lg transition-shadow">
+                        <h3 class="font-bold text-lg text-slate-200">Recharge</h3>
+                        <p class="text-slate-400 mt-1">Subscriptions</p>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Glossary Section -->
+            <section id="glossary" class="content-section hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-200">E-commerce Glossary</h2>
+                    <p class="text-slate-400 mt-1">Quick definitions for key e-commerce terms.</p>
+                </div>
+                <div class="w-full max-w-2xl mx-auto mb-6">
+                    <input type="text" id="glossary-search-input" placeholder="Search terms..." class="w-full p-2 rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
+                </div>
+                <div id="glossary-list" class="card space-y-4">
+                    <!-- Glossary terms will be dynamically loaded here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="klaviyo" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="font-bold text-xl mb-4 text-blue-400">Klaviyo: Setup & Optimization</h3>
+            <div class="space-y-4 text-slate-300">
+                <p><strong>Purpose/Benefit:</strong> Essential for building direct relationships, automating personalized communications, and driving significant revenue through email and SMS flows and campaigns. Excels at behavioral segmentation.</p>
+                <h4 class="font-semibold text-lg text-slate-200">Setup Steps:</h4>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Go to <a href="https://www.klaviyo.com/" target="_blank" class="text-blue-400 hover:underline">Klaviyo.com</a> and sign up.</li>
+                    <li>Navigate to <strong>Integrations</strong>, select <strong>Shopify</strong>, and follow prompts to connect your store. Grant all necessary data sync permissions.</li>
+                    <li>Confirm web tracking is active under <strong>Analytics > Integrations > Shopify > Settings</strong>.</li>
+                    <li>If you have existing lists, import them into Klaviyo (<strong>Lists & Segments > Import Contacts</strong>).</li>
+                    <li>Set up a dedicated sending domain under <strong>Account > Settings > Email > Sending Domain</strong>. This improves deliverability.</li>
+                </ol>
+                <h4 class="font-semibold text-lg text-slate-200">Optimization Strategies:</h4>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>**Implement Core Flows:** Welcome Series (3-5 emails), Abandoned Cart (3 emails + 1 SMS), Browse Abandonment (1-2 emails), Post-Purchase (2-3 emails), Win-Back (2-3 emails for lapsed customers).</li>
+                    <li>**Segmentation:** Use powerful segmentation (e.g., "Purchased more than $X", "Engaged subscribers", "Viewed Product X") for highly targeted campaigns.</li>
+                    <li>**A/B Testing:** Continuously test subject lines, email content, CTAs, send times, and incentives to boost open rates, click-throughs, and conversions.</li>
+                    <li>**SMS Marketing:** Integrate SMS into flows for time-sensitive offers, ensuring full compliance with regulations.</li>
+                </ul>
+                <button class="close-modal mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="yotpo" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="font-bold text-xl mb-4 text-blue-400">Yotpo / Loox: Setup & Optimization</h3>
+            <div class="space-y-4 text-slate-300">
+                <p><strong>Purpose/Benefit:</strong> Automates collection of customer reviews and photos/videos (UGC), providing crucial social proof that builds trust, boosts conversion rates, and improves SEO.</p>
+                <h4 class="font-semibold text-lg text-slate-200">Setup Steps:</h4>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Sign up for <a href="https://www.yotpo.com/" target="_blank" class="text-blue-400 hover:underline">Yotpo.com</a> (or <a href="https://loox.io/" target="_blank" class="text-blue-400 hover:underline">Loox.io</a>) and connect your Shopify store via the app installation.</li>
+                    <li>Configure review request emails under <strong>Collect Reviews > Mail After Purchase</strong>. Set timing (e.g., 7-14 days post-fulfillment) and personalize content.</li>
+                    <li>Ensure review widgets (main widget, star ratings) are displayed on PDPs and collection pages. Consider a dedicated "All Reviews" page or homepage carousel.</li>
+                    <li>Enable and encourage photo & video reviews, possibly with incentives.</li>
+                </ol>
+                <h4 class="font-semibold text-lg text-slate-200">Optimization Strategies:</h4>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>**Offer Incentives:** Provide small discount codes for customers who submit reviews, especially photo/video.</li>
+                    <li>**Syndicate Reviews:** Explore options to push reviews to other selling channels (e.g., Google Shopping).</li>
+                    <li>**Respond to Reviews:** Professionally address all reviews, positive or negative, to show engagement.</li>
+                    <li>**Showcase UGC:** Actively use customer photos/videos in ads, social media, and emails for authentic social proof.</li>
+                    <li>**Filter/Sort:** Enable filtering by star rating or keyword on review pages for user convenience.</li>
+                </ul>
+                <button class="close-modal mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="ga4" class="modal-overlay">
+        <div class="modal-content">
+             <h3 class="font-bold text-xl mb-4 text-blue-400">Google Analytics 4: Setup & Optimization</h3>
+             <div class="space-y-4 text-slate-300">
+                <p><strong>Purpose/Benefit:</strong> Provides advanced analytics for understanding user behavior across your website. Crucial for tracking sales, identifying popular products, and diagnosing conversion funnel issues.</p>
+                <h4 class="font-semibold text-lg text-slate-200">Setup Steps:</h4>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Create a new GA4 property at <a href="https://analytics.google.com/" target="_blank" class="text-blue-400 hover:underline">analytics.google.com</a>.</li>
+                    <li>Install the GA4 tag via Shopify's native integration (<strong>Online Store > Preferences</strong>, paste Measurement ID) for basic tracking.</li>
+                    <li>**Recommended for Enhanced E-commerce:** For granular data (product views, add-to-carts, checkouts, purchases), use Google Tag Manager (GTM) to push specific `event` and `item` parameters to GA4. Consult Google's documentation for GTM implementation details.</li>
+                </ol>
+                <h4 class="font-semibold text-lg text-slate-200">Optimization Strategies:</h4>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>**Custom Reports & Explorations:** Use **Funnel Exploration** to analyze the customer journey and identify drop-off points. Use **Path Exploration** to see common user flows. Create **Product Performance** reports to track popular products.</li>
+                    <li>**Audience Creation:** Build audiences based on behavior (e.g., "Abandoned Cart Users", "High-Value Purchasers") and export them to Google Ads for retargeting.</li>
+                    <li>**Event Tracking:** Set up custom events for key interactions not automatically tracked (e.g., newsletter sign-ups from pop-ups, video plays).</li>
+                    <li>**Conversions:** Mark crucial events (e.g., `purchase`, `add_to_cart`, `begin_checkout`) as conversions in GA4 for easy performance tracking.</li>
+                </ul>
+             </div>
+             <button class="close-modal mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Close</button>
+        </div>
+    </div>
+    <div id="clarity" class="modal-overlay">
+        <div class="modal-content">
+             <h3 class="font-bold text-xl mb-4 text-blue-400">Microsoft Clarity: Setup & Optimization</h3>
+             <div class="space-y-4 text-slate-300">
+                <p><strong>Purpose/Benefit:</strong> Free tool providing visual insights (heatmaps, session recordings) into user behavior. Helps diagnose user friction and identify areas for conversion rate optimization.</p>
+                <h4 class="font-semibold text-lg text-slate-200">Setup Steps:</h4>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Sign up at <a href="https://clarity.microsoft.com/" target="_blank" class="text-blue-400 hover:underline">clarity.microsoft.com</a> and add your Shopify store URL as a new project.</li>
+                    <li>Obtain the tracking code. In Shopify, go to <strong>Online Store > Themes > Actions > Edit code</strong>. Open `theme.liquid` and paste the code just before `</head>`. Save.</li>
+                    <li>Verify installation in your Clarity dashboard; data should appear shortly.</li>
+                </ol>
+                <h4 class="font-semibold text-lg text-slate-200">Optimization Strategies:</h4>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>**Heatmaps:** Analyze click heatmaps on PDPs to see user engagement. Scroll heatmaps show content visibility.</li>
+                    <li>**Session Recordings:** Watch recordings of abandoned carts or crucial page exits to understand user frustration (rage clicks, dead clicks, unusual navigation).</li>
+                    <li>**Insights Dashboard:** Monitor aggregated data on "pages with rage clicks" and "JavaScript errors" for quick health checks.</li>
+                    <li>**Filter & Segment:** Apply filters to recordings/heatmaps (e.g., mobile users, specific ad campaign users) for targeted insights.</li>
+                </ul>
+             </div>
+             <button class="close-modal mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Close</button>
+        </div>
+    </div>
+     <div id="fairing" class="modal-overlay">
+        <div class="modal-content">
+             <h3 class="font-bold text-xl mb-4 text-blue-400">Fairing / KnoCommerce: Setup & Optimization</h3>
+             <div class="space-y-4 text-slate-300">
+                <p><strong>Purpose/Benefit:</strong> Allows you to ask customers "How did you hear about us?" (HDYHAU) post-purchase. This data is critical for accurate marketing attribution, helping optimize ad spend beyond platform-reported data.</p>
+                <h4 class="font-semibold text-lg text-slate-200">Setup Steps:</h4>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Choose either <a href="https://www.fairing.co/" target="_blank" class="text-blue-400 hover:underline">Fairing.co</a> or <a href="https://www.knocommerce.com/" target="_blank" class="text-blue-400 hover:underline">KnoCommerce.com</a> and connect the app to your Shopify store.</li>
+                    <li>Create your HDYHAU survey question. Configure it to appear on your Shopify Order Confirmation Page (Thank You Page).</li>
+                    <li>Set up clear answer options aligned with your marketing channels (e.g., "Google Search", "Facebook/Instagram Ad", "Friend/Family", "TikTok", "Podcast").</li>
+                    <li>Ensure data can be exported or integrated for further analysis (e.g., Google Sheets).</li>
+                </ol>
+                <h4 class="font-semibold text-lg text-slate-200">Optimization Strategies:</h4>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>**Keep it Simple:** Limit surveys to 1-2 questions immediately post-purchase to avoid overwhelming customers.</li>
+                    <li>**Dynamic Follow-Up:** If "Other" is selected, prompt for elaboration with an optional free-text field.</li>
+                    <li>**Analyze Data Monthly:** Regularly review HDYHAU data and compare it against platform-reported attribution for a more accurate spend picture.</li>
+                    <li>**Inform Ad Spend:** Use HDYHAU insights to reallocate budget to channels genuinely driving new, profitable customers, regardless of initial platform ROAS.</li>
+                </ul>
+             </div>
+             <button class="close-modal mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Close</button>
+        </div>
+    </div>
+    <div id="recharge" class="modal-overlay">
+        <div class="modal-content">
+             <h3 class="font-bold text-xl mb-4 text-blue-400">Recharge: Setup & Optimization</h3>
+             <div class="space-y-4 text-slate-300">
+                <p><strong>Purpose/Benefit:</strong> The leading Shopify app for offering subscription products. Handles recurring billing, customer portals for managing subscriptions, and subscription lifecycle management.</p>
+                <h4 class="font-semibold text-lg text-slate-200">Setup Steps:</h4>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Install "Recharge Subscriptions" from the Shopify App Store.</li>
+                    <li>Define which products or variants can be subscribed to and set subscription intervals (e.g., 30/60 days) and any subscription discounts.</li>
+                    <li>Customize the customer portal to match your brand.</li>
+                    <li>Thoroughly test by placing test subscription orders to ensure all functionality (billing, notifications, portal) works correctly.</li>
+                </ol>
+                <h4 class="font-semibold text-lg text-slate-200">Optimization Strategies:</h4>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>**Lifecycle Emails:** Integrate with Klaviyo to send automated emails for subscription events (e.g., "Subscription Activated", "Upcoming Order Reminder", "Payment Update Needed").</li>
+                    <li>**Churn Prevention:** Offer incentives to customers attempting to cancel (e.g., one-time discount, skip month option, product swap).</li>
+                    <li>**Product Swaps/Bundles:** Allow easy product swaps within subscriptions or create bundles to increase LTV.</li>
+                    <li>**Upsell Opportunities:** Promote one-time add-ons during the subscription checkout process.</li>
+                    <li>**Customer Portal Accessibility:** Make it easy for subscribers to find and manage their subscriptions.</li>
+                </ul>
+             </div>
+             <button class="close-modal mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Close</button>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const navLinks = document.querySelectorAll('.nav-link');
+    const contentSections = document.querySelectorAll('.content-section');
+    let ltvCacChart;
+
+    const glossaryData = [
+        { term: 'AOV (Average Order Value)', definition: 'The average amount of money a customer spends per transaction.' },
+        { term: 'CAC (Customer Acquisition Cost)', definition: 'Total Sales & Marketing Spend / Number of New Customers Acquired.' },
+        { term: 'CM (Contribution Margin)', definition: '(Average Order Value - Cost of Goods Sold) / Average Order Value.' },
+        { term: 'Conversion Rate', definition: 'The percentage of website visitors who complete a desired action, such as making a purchase.' },
+        { term: 'CPA (Cost Per Acquisition)', definition: 'The total cost associated with acquiring a new customer, or making a sale.' },
+        { term: 'CPM (Cost Per Mille/Thousand)', definition: 'The cost an advertiser pays for one thousand views or impressions of an advertisement.' },
+        { term: 'Fairing / KnoCommerce', definition: 'Post-purchase survey tools for attribution data.' },
+        { term: 'GA4 (Google Analytics 4)', definition: 'The latest version of Google\'s web analytics service for understanding user behavior.' },
+        { term: 'HDYHAU (How Did You Hear About Us)', definition: 'A post-purchase survey question used to gather direct attribution data from customers.' },
+        { term: 'Klaviyo', definition: 'An email and SMS marketing automation platform for e-commerce, known for behavioral segmentation.' },
+        { term: 'LTV (Lifetime Value)', definition: '(Average Order Value) x (Purchase Frequency) x (Customer Lifespan).' },
+        { term: 'Microsoft Clarity', definition: 'A free tool for heatmaps, session recordings, and website analytics to diagnose user friction.' },
+        { term: 'PDP (Product Detail Page)', definition: 'The specific page on an e-commerce website that provides detailed information about a single product.' },
+        { term: 'Pixel', definition: 'A snippet of code placed on a website to track user behavior and conversions, used by advertising platforms (e.g., Meta Pixel, Google Ads conversion tracking).' },
+        { term: 'PMax (Performance Max)', definition: 'An automated Google Ads campaign type that uses AI to serve ads across all Google channels to maximize conversions.' },
+        { term: 'Recharge', definition: 'A Shopify app for managing subscription products, handling recurring billing and customer portals.' },
+        { term: 'RLSA (Remarketing Lists for Search Ads)', definition: 'A Google Ads feature that allows you to customize your search ad campaigns for people who have previously visited your website.' },
+        { term: 'ROAS (Return on Ad Spend)', definition: '(Revenue from Ad Spend / Ad Spend) * 100%.' },
+        { term: 'UGC (User-Generated Content)', definition: 'Any form of content (reviews, photos, videos) created by customers rather than the brand itself.' },
+        { term: 'Yotpo / Loox', definition: 'Platforms for automating collection of customer reviews and user-generated content.' }
+    ];
+
+    function renderGlossary(searchTerm = '') {
+        const glossaryList = document.getElementById('glossary-list');
+        glossaryList.innerHTML = ''; // Clear current list
+
+        const filteredTerms = glossaryData.filter(item =>
+            item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.definition.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        if (filteredTerms.length === 0) {
+            glossaryList.innerHTML = '<p class="text-center text-slate-400">No terms found matching your search.</p>';
+            return;
+        }
+
+        filteredTerms.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'glossary-term-item';
+            div.innerHTML = `
+                <div class="glossary-term text-base text-blue-400">${item.term}</div>
+                <div class="glossary-definition text-sm text-slate-400">${item.definition}</div>
+            `;
+            glossaryList.appendChild(div);
+        });
+    }
+
+    function updateDashboard() {
+        const aov = parseFloat(document.getElementById('aov').value) || 0;
+        const cogsPercentage = parseFloat(document.getElementById('cogs').value) || 0;
+        const purchaseFreq = parseFloat(document.getElementById('purchase_freq').value) || 0;
+        const cac = parseFloat(document.getElementById('cac').value) || 0;
+
+        const contributionMargin = (aov - (aov * cogsPercentage / 100)) / aov;
+        const ltv = (aov * purchaseFreq * 1) * contributionMargin;
+        const ltvCacRatio = cac > 0 ? ltv / cac : 0;
+
+        document.getElementById('ltv_output').textContent = `$${ltv.toFixed(2)}`;
+        document.getElementById('cm_output').textContent = `${(contributionMargin * 100).toFixed(0)}%`;
+
+        updateLtvCacChart(ltvCacRatio);
+    }
+
+    function updateLtvCacChart(ratio) {
+        const needleValue = ratio;
+        let color = '#ef4444'; // red
+        if (ratio >= 2 && ratio < 3) {
+            color = '#f59e0b'; // amber
+        } else if (ratio >= 3) {
+            color = '#22c55e'; // green
+        }
+
+        ltvCacChart.data.datasets[0].backgroundColor = [color, '#1A202C']; /* Use card background for empty part */
+        ltvCacChart.data.datasets[0].data = [Math.min(needleValue, 5), Math.max(0, 5 - Math.min(needleValue, 5))]; /* Cap ratio at 5 for chart visual */
+        ltvCacChart.options.plugins.title.text = `Ratio: ${ratio.toFixed(2)} : 1`;
+        ltvCacChart.update();
+    }
+
+
+    function initLtvCacChart() {
+        const ctx = document.getElementById('ltvCacRatioChart').getContext('2d');
+        ltvCacChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['LTV:CAC Ratio', ''],
+                datasets: [{
+                    data: [0, 5],
+                    backgroundColor: ['#ef4444', '#1A202C'], /* Default red, rest card background */
+                    borderColor: '#1A202C', /* Border matches card for seamless look */
+                    borderWidth: 2,
+                    circumference: 180,
+                    rotation: 270,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false },
+                    title: {
+                        display: true,
+                        text: 'Ratio: 0.00 : 1',
+                        position: 'bottom',
+                        font: { size: 18, weight: 'bold' },
+                        color: '#E2E8F0', /* Light text */
+                        padding: { top: -20 }
+                    }
+                }
+            }
+        });
+    }
+
+    function initBudgetChart() {
+        const ctx = document.getElementById('budgetChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Meta Ads ($700)', 'Google Ads ($300)'],
+                datasets: [{
+                    data: [700, 300],
+                    backgroundColor: ['#60A5FA', '#3B82F6'], /* Blue-400, Blue-500 */
+                    borderColor: '#1A202C', /* Card background border */
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#E2E8F0' } /* Light text for legend */
+                    },
+                    title: {
+                        display: true,
+                        text: '$1000 Total 30-Day Budget Allocation',
+                        color: '#E2E8F0' /* Light text for title */
+                    }
+                }
+            }
+        });
+    }
+
+    document.querySelectorAll('.kpi-input').forEach(input => {
+        input.addEventListener('input', updateDashboard);
+    });
+
+    const kpiInputs = ['aov', 'cogs', 'purchase_freq', 'cac'];
+    kpiInputs.forEach(id => document.getElementById(id).addEventListener('input', updateDashboard));
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            const target = link.dataset.target;
+            contentSections.forEach(section => {
+                if (section.id === target) {
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+            });
+            if (target === 'glossary') {
+                renderGlossary(); // Render all terms when glossary is opened
+            }
+        });
+    });
+
+    const planTabs = document.querySelectorAll('.plan-tab');
+    const planContents = document.querySelectorAll('.plan-content');
+    planTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            planTabs.forEach(t => t.classList.remove('active-tab'));
+            tab.classList.add('active-tab');
+
+            planContents.forEach(content => {
+                if(content.id === tab.dataset.week) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        });
+    });
+    const dynamicTabStyle = document.createElement('style');
+    dynamicTabStyle.innerHTML = `
+        .active-tab { color: #60A5FA; border-bottom: 2px solid #60A5FA; }
+        .plan-tab:not(.active-tab) { color: #94A3B8; } /* Slate-400 */
+    `;
+    document.head.appendChild(dynamicTabStyle);
+
+
+    const accordionItems = document.querySelectorAll('.accordion-item');
+    accordionItems.forEach(item => {
+        const button = item.querySelector('.accordion-button');
+        const content = item.querySelector('.accordion-content');
+        const icon = item.querySelector('.accordion-icon');
+        button.addEventListener('click', () => {
+            const isExpanded = content.style.maxHeight && content.style.maxHeight !== '0px';
+            if (isExpanded) {
+                content.style.maxHeight = '0px';
+                icon.textContent = '+';
+            } else {
+                content.style.maxHeight = content.scrollHeight + 'px';
+                icon.textContent = '-';
+            }
+        });
+    });
+
+    const modalButtons = document.querySelectorAll('.modal-button');
+    const closeButtons = document.querySelectorAll('.close-modal');
+    const modalOverlays = document.querySelectorAll('.modal-overlay');
+
+    modalButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const modalId = button.dataset.modal;
+            document.getElementById(modalId).classList.add('visible');
+        });
+    });
+
+    function closeModal(modal) {
+        modal.classList.remove('visible');
+    }
+
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            closeModal(button.closest('.modal-overlay'));
+        });
+    });
+
+    modalOverlays.forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeModal(overlay);
+            }
+        });
+    });
+
+    document.getElementById('glossary-search-input').addEventListener('input', (e) => {
+        renderGlossary(e.target.value);
+    });
+
+
+    initLtvCacChart();
+    initBudgetChart();
+    updateDashboard(); // Initialize dashboard on load
+    renderGlossary(); // Render glossary on load (hidden by default)
+});
+</script>
+</body>
+</html>
