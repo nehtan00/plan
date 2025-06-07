@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: TextFX Inspired (Background: linear-gradient(to bottom right, #0F172A, #1E293B) - dark slate, Text: #E2E8F0 light slate, Accent: #60A5FA blue-400, Card Background: #1A202C darker slate) -->
-    <!-- Application Structure Plan: A tabbed dashboard SPA. The structure prioritizes user task and business lifecycle stage over the original document's linear format. The main sections are: a 'Dashboard' for real-time KPI tracking, an actionable '30-Day Plan' with weekly steps, a 'Growth Levers' section for optimization strategies, a 'Tool Kit' reference library, and a new 'Glossary' for quick term lookups. This design allows users to quickly access the information most relevant to their current needs, transforming a static playbook into an interactive, decision-support tool. -->
+    <!-- Application Structure Plan: A tabbed dashboard SPA. The structure prioritizes user task and business lifecycle stage over the original document's linear format. The main sections are: a 'Dashboard' for real-time KPI tracking, an actionable '30-Day Plan' with weekly steps, a 'Growth Levers' section for optimization strategies, and a 'Tool Kit' reference library, and a new 'Glossary' for quick term lookups. This design allows users to quickly access the information most relevant to their current needs, transforming a static playbook into an interactive, decision-support tool. -->
     <!-- Visualization & Content Choices: Dashboard uses Chart.js doughnut chart as a gauge for LTV:CAC Ratio and simple text outputs for other KPIs (Goal: Inform/Compare), allowing user input for dynamic calculation. 30-Day Plan uses a Chart.js doughnut for budget breakdown and a JS-powered tab system for weekly tasks with interactive checkboxes for tracking progress (Goal: Organize/Change/Checklist). Growth Levers use JS accordions for checklists (interactive checkboxes) and key troubleshooting points (Goal: Organize/Checklist). Tool Kit uses a grid of buttons and JS modals for detailed reference guides (Goal: Organize). Glossary uses a searchable list for quick definitions (Goal: Inform/Organize/Search). This approach avoids a long scroll and presents information in contextually relevant, interactive formats. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -113,17 +113,29 @@
                 <div class="text-center mb-8">
                     <h2 class="text-2xl font-bold text-slate-200">Unit Economics & KPI Dashboard</h2>
                     <p class="text-slate-400 mt-1">Model your key financial metrics to ensure profitability from day one.</p>
+                    <div class="card p-4 mt-6 text-left">
+                        <h3 class="font-bold text-lg text-slate-200 mb-2">Your Current Performance (Last 6 Months):</h3>
+                        <ul class="list-disc list-inside text-slate-300 space-y-1">
+                            <li><strong>Total Revenue (Etsy):</strong> $3,379.10</li>
+                            <li><strong>Etsy Fees:</strong> -$369.09</li>
+                            <li><strong>Etsy Marketing:</strong> -$527.23</li>
+                            <li><strong>Printful COGS:</strong> -$2,303.12 (for 92 orders, averaging $25.03/order)</li>
+                            <li><strong>Calculated Net Profit:</strong> $179.66</li>
+                        </ul>
+                        <p class="text-slate-400 mt-3 text-sm">Your actual net profit from Etsy for the last six months, after accounting for all fees and Printful costs, was very low. This highlights the critical need to optimize your Cost of Goods Sold (COGS) and manage overall expenses.</p>
+                    </div>
                 </div>
                 <div class="grid md:grid-cols-2 gap-8 items-start">
                     <div class="card space-y-4">
                         <h3 class="font-bold text-lg text-slate-200 text-center">KPI Calculator</h3>
+                        <p class="text-slate-400 text-sm mt-1">When calculating your COGS for accuracy, ensure you factor in *all* variable costs associated with producing and delivering one unit, including supplier costs (Printful/Printify), payment processing fees, and any direct per-unit shipping costs.</p>
                         <div>
                             <label for="aov" class="block text-sm font-medium text-slate-200">Average Order Value ($)</label>
-                            <input type="number" id="aov" value="100" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
+                            <input type="number" id="aov" value="36.73" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
                         </div>
                         <div>
-                            <label for="cogs" class="block text-sm font-medium text-slate-200">Cost of Goods Sold (%)</label>
-                            <input type="number" id="cogs" value="30" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
+                            <label for="cogs" class="block text-sm font-medium text-slate-200">Cost of Goods Sold per Order ($)</label>
+                            <input type="number" id="cogs" value="25.03" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
                         </div>
                         <div>
                             <label for="purchase_freq" class="block text-sm font-medium text-slate-200">Purchase Frequency (per year)</label>
@@ -131,7 +143,7 @@
                         </div>
                         <div>
                             <label for="cac" class="block text-sm font-medium text-slate-200">Customer Acquisition Cost ($)</label>
-                            <input type="number" id="cac" value="35" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
+                            <input type="number" id="cac" value="5.73" class="mt-1 block w-full rounded-md border-gray-700 shadow-sm focus:border-blue-400 focus:ring focus:ring-blue-400 focus:ring-opacity-50 bg-gray-800 text-slate-200">
                         </div>
                     </div>
                     <div class="space-y-8">
@@ -143,11 +155,11 @@
                         </div>
                          <div class="grid grid-cols-2 gap-4">
                             <div class="card text-center">
-                                <h4 class="font-semibold text-slate-400">LTV</h4>
+                                <h4 class="font-semibold text-slate-400">LTV (approx.)</h4>
                                 <p id="ltv_output" class="text-3xl font-bold text-blue-400">$0</p>
                             </div>
                             <div class="card text-center">
-                                <h4 class="font-semibold text-slate-400">Contribution Margin</h4>
+                                <h4 class="font-semibold text-slate-400">Gross Margin (%)</h4>
                                 <p id="cm_output" class="text-3xl font-bold text-blue-400">0%</p>
                             </div>
                         </div>
@@ -182,15 +194,19 @@
                             <div class="space-y-2">
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week1-action1">
-                                    <label for="week1-action1">Launch a 'dark' "Add to Cart" conversion campaign on Meta to season your pixel.</label>
+                                    <label for="week1-action1">Conduct a detailed audit of all current expenses (Etsy fees, Printful costs, marketing) for a baseline.</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week1-action2">
-                                    <label for="week1-action2">Set up a low-budget ($6/day) Broad Match Keyword campaign on Google for brand/general terms.</label>
+                                    <label for="week1-action2">Launch a 'dark' "Add to Cart" conversion campaign on Meta to season your pixel.</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week1-action3">
-                                    <label for="week1-action3">Triple-check that Google Ads conversion tracking, Google Analytics 4, and Microsoft Clarity are all firing correctly.</label>
+                                    <label for="week1-action3">Set up a low-budget ($6/day) Broad Match Keyword campaign on Google for brand/general terms.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week1-action4">
+                                    <label for="week1-action4">Triple-check that Google Ads conversion tracking, Google Analytics 4, and Microsoft Clarity are all firing correctly.</label>
                                 </div>
                             </div>
                             <p class="text-slate-400"><strong>Metrics:</strong> Ensure pixels are firing correctly in Meta Events Manager and Google Ads.</p>
@@ -203,19 +219,23 @@
                              <div class="space-y-2">
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week2-action1">
-                                    <label for="week2-action1">Launch a low-budget "Purchase" conversion campaign on Meta targeting broad interests or lookalikes.</label>
+                                    <label for="week2-action1">Research Printful Pro/Printify Premium subscription benefits for COGS reduction and calculate potential savings vs. subscription cost.</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week2-action2">
-                                    <label for="week2-action2">Launch a Performance Max (PMax) campaign on Google ($10/day).</label>
+                                    <label for="week2-action2">Launch a low-budget "Purchase" conversion campaign on Meta targeting broad interests or lookalikes.</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week2-action3">
-                                    <label for="week2-action3">Add your brand name as a negative keyword to PMax and do not provide audience signals yet.</label>
+                                    <label for="week2-action3">Launch a Performance Max (PMax) campaign on Google ($10/day).</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week2-action4">
-                                    <label for="week2-action4">Monitor Link Clicks, CPM, Cost Per ATC for Meta Ads. For PMax, monitor impressions and initial search terms.</label>
+                                    <label for="week2-action4">Add your brand name as a negative keyword to PMax and do not provide audience signals yet.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week2-action5">
+                                    <label for="week2-action5">Monitor Link Clicks, CPM, Cost Per ATC for Meta Ads. For PMax, monitor impressions and initial search terms.</label>
                                 </div>
                             </div>
                             <p class="text-slate-400"><strong>Metrics:</strong> Track Link Clicks, CPM, Cost Per ATC. For PMax, monitor impressions and search terms.</p>
@@ -228,23 +248,27 @@
                             <div class="space-y-2">
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week3-action1">
-                                    <label for="week3-action1">Analyze Meta ad creative and audience performance. Pause low-performing ad sets/creatives.</label>
+                                    <label for="week3-action1">Activate Printful Pro/Printify Premium if the cost-benefit analysis from Week 2 is favorable. Recalculate projected COGS.</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week3-action2">
-                                    <label for="week3-action2">Test new creatives (different hooks, visuals, ad copy) on Meta.</label>
+                                    <label for="week3-action2">Analyze Meta ad creative and audience performance. Pause low-performing ad sets/creatives.</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week3-action3">
-                                    <label for="week3-action3">Daily review Google PMax search term report and aggressively add all irrelevant terms to a shared negative keyword list.</label>
+                                    <label for="week3-action3">Test new creatives (different hooks, visuals, ad copy) on Meta.</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week3-action4">
-                                    <label for="week3-action4">Evaluate PMax Assets and replace any with a "Low" performance rating with new variations.</label>
+                                    <label for="week3-action4">Daily review Google PMax search term report and aggressively add all irrelevant terms to a shared negative keyword list.</label>
                                 </div>
                                 <div class="checklist-item">
                                     <input type="checkbox" id="week3-action5">
-                                    <label for="week3-action5">Use Microsoft Clarity to watch session recordings of users who dropped off on PDPs or cart.</label>
+                                    <label for="week3-action5">Evaluate PMax Assets and replace any with a "Low" performance rating with new variations.</label>
+                                </div>
+                                <div class="checklist-item">
+                                    <input type="checkbox" id="week3-action6">
+                                    <label for="week3-action6">Use Microsoft Clarity to watch session recordings of users who dropped off on PDPs or cart.</label>
                                 </div>
                             </div>
                             <p class="text-slate-400"><strong>Metrics:</strong> Goal is to improve CTR and reduce CPA.</p>
@@ -339,6 +363,21 @@
                     </div>
                      <div class="accordion-item card">
                         <button class="accordion-button w-full flex justify-between items-center text-left font-bold text-lg">
+                            <span>COGS Optimization Strategy</span>
+                            <span class="accordion-icon text-2xl font-light">+</span>
+                        </button>
+                        <div class="accordion-content pt-4 text-slate-400">
+                           <p class="mb-2">Based on your provided data, Printful COGS are $25.03 per order. With 92 orders, this sums to $2,303.12 over 6 months. A 20% discount (often available with Printful Pro/Printify Premium subscriptions) would save you approximately $460.62 over 6 months. Given subscription costs (e.g., $29-49/month or $174-294 over 6 months), this is a clear path to significant savings.</p>
+                           <ul class="list-disc list-inside space-y-2">
+                               <li>**Supplier Subscriptions:** Strongly consider Printful Pro or Printify Premium to lower per-unit costs.</li>
+                               <li>**Product Bundling:** Create bundles to increase Average Order Value (AOV), spreading fixed costs across more items.</li>
+                               <li>**Design Simplification:** For some products, explore designs that may have lower print costs while maintaining appeal.</li>
+                               <li>**Volume Discounts:** If applicable, aim for higher order volumes with your print-on-demand providers to unlock better pricing tiers.</li>
+                           </ul>
+                        </div>
+                    </div>
+                     <div class="accordion-item card">
+                        <button class="accordion-button w-full flex justify-between items-center text-left font-bold text-lg">
                             <span>Data-Driven Troubleshooting Matrix</span>
                             <span class="accordion-icon text-2xl font-light">+</span>
                         </button>
@@ -362,6 +401,10 @@
                            <div>
                                 <h5 class="font-semibold text-slate-200">Symptom: Low Email List Growth</h5>
                                 <p class="text-slate-400"><strong>Remedy:</strong> Implement pop-ups/banners with clear value propositions. Offer a stronger incentive (e.g., 10% off first order).</p>
+                           </div>
+                           <div>
+                                <h5 class="font-semibold text-slate-200">Symptom: Very Low Net Profit / High Overall Expenses</h5>
+                                <p class="text-slate-400"><strong>Remedy:</strong> Conduct a full audit of ALL expenses (platform fees, processing fees, marketing, COGS, subscriptions). Actively seek ways to lower COGS (e.g., Print-on-Demand subscriptions, bulk discounts). Re-evaluate pricing to ensure healthy gross margins after all direct costs.</p>
                            </div>
                         </div>
                     </div>
@@ -615,17 +658,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateDashboard() {
         const aov = parseFloat(document.getElementById('aov').value) || 0;
-        const cogsPercentage = parseFloat(document.getElementById('cogs').value) || 0;
+        const cogs = parseFloat(document.getElementById('cogs').value) || 0; // This is now per-order COGS
         const purchaseFreq = parseFloat(document.getElementById('purchase_freq').value) || 0;
         const cac = parseFloat(document.getElementById('cac').value) || 0;
 
-        const contributionMargin = (aov - (aov * cogsPercentage / 100)) / aov;
-        const ltv = (aov * purchaseFreq * 1) * contributionMargin;
-        const ltvCacRatio = cac > 0 ? ltv / cac : 0;
+        // Corrected calculation for gross margin based on AOV and COGS per order
+        const grossMargin = (aov - cogs) / aov; 
+        const ltv = aov * purchaseFreq; // Simple LTV calculation. For detailed, factor in gross margin per purchase
+        const ltvCacRatio = cac > 0 ? (ltv * grossMargin) / cac : 0; // LTV:CAC should consider profitability
 
         document.getElementById('ltv_output').textContent = `$${ltv.toFixed(2)}`;
-        document.getElementById('cm_output').textContent = `${(contributionMargin * 100).toFixed(0)}%`;
-
+        document.getElementById('cm_output').textContent = `${(grossMargin * 100).toFixed(0)}%`; // Renamed to Gross Margin
+        
         updateLtvCacChart(ltvCacRatio);
     }
 
